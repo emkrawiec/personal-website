@@ -1,0 +1,10 @@
+/* Overload tailwind-typography styles */
+code {
+  font-family: "IBM Plex Mono", monospace !important;
+  padding: 0.1em 0.4em !important;
+}
+
+code::before,
+code::after {
+  content: "" !important;
+}
