@@ -19,7 +19,7 @@ const Blog = ({ data }) => {
                 <article>
                   <header>
                     <h2 className="text-2xl">{title}</h2>
-                    <small className="text-sm">
+                    <small className="block text-sm my-2">
                       {post.frontmatter.date}, {post.timeToRead} minutes to read
                     </small>
                   </header>

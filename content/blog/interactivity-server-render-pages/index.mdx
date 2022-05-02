@@ -1,0 +1,468 @@
+---
+title: On augumenting interactivity on server rendered websites
+date: "2022-05-01T00:00:00.004Z"
+description: "Learn how to leverage more niche solutions to apply Javascript sprinkles to the HTML you got from your server without using heavy tools."
+excerpt: "Augumenting HTML with simple interactions does not need pulling out the big guns. Current state of frontend tools focus on UI frameworks which may not be relevant in every Web based project."
+---
+
+import { Anchor } from '../../../src/components/Anchor.tsx';
+
+Today in the application land on the Web we are used to rich, interactive experiences. Rise of SPAs accompanied with client side routing resembles feeling of native apps we see on mobile or desktop. This and relatively easy to pickup Web technologies resulted in explosion of frontend frameworks for creating UIs. 
+
+Many newcomers who start learning Web these days are flooded with information about these "modern solutions". They may percieve using one as a kind of canonical way to build rich web pages.
+
+While UI frameworks are good tools, they are not “one size fits all” solutions for adding interactivity to websites. Especially when you primarily serve static content and build your templates on the server.
+
+## tl;dr
+
+- still purpose of most of the webpages on the internet is to serve static content. Think blogs, marketing pages etc.,
+- application UI frameworks are not tools to add interactivity on mostly static websites,
+- there are solutions providing convenient, structured way to add interactivity sprinkles to pages whose HTML is rendered on the server,
+- Alpine, PetiteVue, Vue keep app state in JS heap memory and treat DOM purely as a projection of a view model,
+- Stimulus is convention based, more imperative and keep state in the DOM
+
+## Not only apps
+
+Many developers who love using modern tools sometimes forget that main purpose of majority of sites on the internet is to **serve informational content**. These webpages are blogs, marketing websites, landing pages etc. Such sites are usually developed using old school CMSes like Wordpress or built-time generated with static site generators like Jekyll or Hugo.
+
+While these sites mostly present some information it may be desired to add some interactions such as displaying a modal or handling simple form validation.
+
+Using frontend framework for such small interactivity sprinkles would be quite an overkill which would bump up JS bundle size significantly. What's more, complexity of such aproach would rise up due to often accompanied build step. 
+
+Another important point is that using these "classic" approaches you get HTML with whole content straight up from your server. You do not get empty page with one `<div>` waiting for your framework of choice to properly bootstrap the page.
+
+So, using fully fledged frameworks is much more suitable for writing **frontend apps**, not for handling small interactivity on mostly static pages.
+However, there are still some valid approaches which help you manage interactivity “for the HTML you already have”. Let's take a look and compare at a couple of them. 
+But before that let me introduce a simple app.
+
+## Setup
+
+Presented example is a mini app pricing calculator which updates total price according to the provided configuration. It has:
+
+- two feature checkboxes which append accordingly 5$ and 10$ to the overall cost,
+- periodicity radio buttons. Annual one multiplying price by 0.8 and monthly leaving price unchanged,
+- users count input multiplying result from feature and periodicity computation by the chosen number
+
+Although app seems trivial, it combines most of the tasks familiar to frontend developers. These are:
+
+- getting input from user in forms (listening to events), 
+- computing (processing data from user input),
+- displaying results (binding results to the HTML elements)
+
+Below I pasted base markup for the app which is rendered on the server:
+
+```html
+<form class="o-container" data-baseprice="20">
+  <div class="u-flex u-align-center u-justify-between">
+    <h1>$</h1>
+    <label>
+      Users
+      <input type="number" step="1" min="1" name="users" value="1">
+    </label>
+  </div>
+  <fieldset>
+    <legend>Periodicity</legend>
+    <label>
+      <input type="radio" name="periodicity" value="8" checked>
+      Monthly
+    </label>
+    <label>  
+      <input type="radio" name="periodicity" value="0">
+      Annually
+    </label>
+  </fieldset>
+  <fieldset>
+    <legend>Features</legend>
+    <div>
+      <label>
+        <input type="checkbox" value="10" name="feature-1">
+        Feature 1
+      </label>
+    </div>
+    <div>
+      <label>
+        <input type="checkbox" value="5" name="feature-2">
+        Feature 2
+      </label> 
+    </div>
+  </fieldset>
+</form>
+```
+
+For each solution, code will be tweaked a little bit.
+
+## Context
+
+The scenario I try to mimic here is a site mostly focused on serving content or legacy app written using "classic" web frameworks.
+
+It may resemble a setup when you probably already have a rich template library in your project (using partials/template parts etc.) and no complex build step to handle your Javascript bundling. Quite familiar for a plain old Wordpress site or Laravel app, right?
+
+I picked tools that can be easily plugged in into existing site. It means that they can be installed using script tag with URL to CDN with the library code. I did not take into account packages requiring build step.
+
+The most important fact is that I assume that markup is **server rendered** so your HTML is ready on initial page load. I do not take into account setup with solutions server rendering HTML and browsers hydrating it on page load (meta frameworks: Next, Nuxt, SvelteKit).
+
+Solutions I preset mostly focus on just enriching existing interfaces by adding behaviour, not creating whole app HTML “on the fly” with full-blown client side rendering.
+
+## Tools
+
+### Alpine.js
+Alpine.js is a minimal framework for sprinkling interactions onto existing HTML. Its creator, Caleb Porzio, in one of the <Anchor href="https://podrocket.logrocket.com/caleb-porzio">podcasts</Anchor> cleverly called it "a little more than jQuery, a little less than React". I think it is really neat way of describing what it is. 
+
+Let's take a look at the code.
+```html
+<form class="o-container" x-data="{
+  get price() {
+    const val = 
+      (
+        this.basePrice + 
+        this.features.reduce(
+          (acc, curr) => acc += curr, 0
+        ) +
+        this.periodicity
+      ) * this.users;
+    return `$${val}`;
+  },
+  basePrice: 20,
+  periodicity: 0,
+  users: 1,
+  features: [],
+}">
+  <div class="u-flex u-align-center u-justify-between">
+    <h1 x-text="price"></h1>
+    <label>
+        Users
+      <input type="number" step="1" min="1" name="users" value="1" x-model="users">
+    </label>
+  </div>
+  <fieldset>
+    <legend>Periodicity</legend>
+    <label>
+      <input type="radio" name="periodicity" value="8" x-model.number="periodicity" checked>
+      Monthly
+    </label>
+    <label>  
+      <input type="radio" name="periodicity" value="0" x-model.number="periodicity">
+      Annually
+    </label>
+  </fieldset>
+  <fieldset>
+    <legend>Features</legend>
+    <div>
+      <label>
+        <input type="checkbox" value="10" name="feature-1" x-model.number="features">
+        Feature 1
+      </label>
+    </div>
+    <div>
+      <label>
+        <input type="checkbox" value="5" name="feature-2" x-model.number="features">
+        Feature 2
+      </label> 
+    </div>
+  </fieldset>
+</form>
+```
+Comparing this code with our base markup would reveal a couple of attributes prefixed with `x-`. They are called a directives and you may already heard of them if you worked with Angular or Vue before. Here they are kind of markers for DOM elements to attach specific behaviour. 
+
+If you are an experienced web dev, first thing which would catch your eye would be: "What is this Javascript in HTML"? That is what makes Alpine unique. It allows you to add Javascript right into your HTML so you don't need to switch contextes between separate files. 
+
+Let's examine the code. I added `x-data` attribute with Javascript object holding data (kind of model for our problem) and a getter which is a computation giving us total price for our calculator. I also appended `x-model` attributes which provide two way data binding mechanism between the property from object in `x-data` and its form input. You may conceptually think of using `x-model` it as a combination of binding a value to the element and an event setting value from the element. It adds some features under the hood for convenience such as handling mutlpile checkboxes. We also use a `.number` which is a modifier allowing us to ensure that values we get from the input are always of type `Number`.
+
+Changing inputs values updates the state which result in instantaneous recomputation of price and adding it to the element holding price value which uses `x-text` directive to bind text value from state.
+
+Alpine offers more beyond what you can see here. It has a transition system, lifecycle methods, global state feature and even offers simple templating with the help of HTML `template` tag. Check out <Anchor href="https://alpinejs.dev/start-here">docs</Anchor> for more.
+
+Ahh, and one more thing. If you are familiar with web security you may ask if Alpine does not violate Content Security Policy (CSP) as it allows to evaluate Javascript from strings in HTML. It does but it also offers alternate setup via `Alpine.data()` which does not have this issue. I provided an example in the repo. This more secure approach may be also used if your Javascript logic is complex and it would bloat HTML too much making it hard to read. It may also be used if you want to reuse functionality in multiple places.
+
+### PetiteVue
+PetiteVue is a smaller alternative to Vue and uses the similar approach to Alpine. It was created by Evan You, creator of Vue. We add some directives here and there and let PetiteVue do the hard stuff. Let's dive in.
+```html
+<form class="o-container" v-scope="{
+  basePrice: 20,
+  periodicity: '0',
+  users: '1',
+  features: [],
+  get price() {
+    const val = 
+      (
+        this.basePrice + 
+        this.features.reduce(
+          (acc, curr) => acc += curr, 0
+        ) +
+        this.periodicity
+      ) * this.users;
+    return `$${val}`;
+  }
+}">
+  <div class="u-flex u-align-center u-justify-between">
+    <h1 v-text="price"></h1>
+    <label>
+      Users
+      <input type="number" step="1" min="1" name="users" value="1" v-model="users">
+    </label>
+  </div>
+  <fieldset>
+    <legend>Periodicity</legend>
+    <label>
+      <input type="radio" name="periodicity" value="8" checked v-model="periodicity">
+      Monthly
+    </label>
+    <label>
+      <input type="radio" name="periodicity" value="0" v-model="periodicity">
+      Annually
+    </label>
+  </fieldset>
+  <fieldset>
+    <legend>Features</legend>
+    <div>
+      <label>
+        <input type="checkbox" value="10" name="feature-1" v-model="features">
+        Feature 1
+      </label>
+    </div>
+    <div>
+      <label>
+        <input type="checkbox" value="5" name="feature-2" v-model="features">
+        Feature 2
+      </label>
+    </div>
+  </fieldset>
+</form>
+```
+As you can see it looks very similiar to Alpine. In fact PetiteVue and Alpine solve the same <Anchor href="https://github.com/vuejs/petite-vue#comparison-with-alpine">category of problems</Anchor>. Comparing to Alpine we use directives prefixed with `v-` instead of `x-`. Name of the directives differ (`x-data` in Alpine is `v-scope` in PetiteVue) but overall aproach and functionality remains almost the same (two way data binding models, modifiers, text binding, lifecycle hooks etc.).
+
+PetiteVue has a concept of components which are used for reusing logic in your code (just like `Alpine.data()` in Alpine). It also allows you to keep most of the JS in the script files, not in HTML. There is an additional example in the repo with this approach.
+
+### Vue
+I stated in the begging that websites with small interactions probably don't need full blown frontend framework. Vue is one of these but also has its other side. On its webpage you can find that it is the **progressive** framework and we will leverege this concept here.
+
+Besides the fact that you can build big apps with Vue using its scaffolding tools, you can also use one of its builds prepared to be used directly in the browser. This allows you to use global `Vue` object on your page.
+
+Although Vue uses its flavour of <Anchor href="https://vuejs.org/guide/extras/rendering-mechanism.html#compiler-informed-virtual-dom">virtual DOM</Anchor>, it also enables using HTML you already have from a server. In Vue 2.x you can use `inline-template` attribute for it. Let's see.
+```html
+<div id="app">
+  <form class="o-container" is="pricing" inline-template :base-price="20">
+    <div>
+      <div class="u-flex u-align-center u-justify-between">
+        <h1>{{ price }}</h1>
+        <label>
+          Users
+          <input type="number" step="1" min="1" name="users" value="1" v-model="users">
+        </label>
+      </div>
+      <fieldset>
+        <legend>Periodicity</legend>
+        <label>
+          <input type="radio" name="periodicity" value="8" v-model="periodicity">
+          Monthly
+        </label>
+        <label>
+          <input type="radio" name="periodicity" value="0" v-model="periodicity">
+          Annually
+        </label>
+      </fieldset>
+      <fieldset>
+        <legend>Features</legend>
+        <div>
+          <label>
+            <input type="checkbox" value="10" name="feature-1" v-model="features">
+            Feature 1
+          </label>
+        </div>
+        <div>
+          <label>
+            <input type="checkbox" value="5" name="feature-2" v-model="features">
+            Feature 2
+          </label>
+        </div>
+      </fieldset>
+    </div>
+  </form>
+</div>
+```
+
+```js
+Vue.component("pricing", {
+  props: {
+    basePrice: Number
+  },
+  data() {
+    return {
+      periodicity: 0,
+      features: [],
+      users: 1,
+    };
+  },
+  computed: {
+    price() {
+      const val = (
+        this.basePrice + 
+        this.features.reduce(
+          (acc, curr) => acc += Number(curr), 0) 
+          + Number(this.periodicity)
+        ) * this.users;
+      return `$${val}`;
+    }
+  }
+});
+
+new Vue({
+  el: "#app"
+});
+```
+In our script we start by defining a component via `Vue.component()` function which registers global component on `Vue` instance. In template we add directives which bind properties from object holding reactive data returned by `data` factory function in component definition. Directives starting with `v-` work the same way like in PetiteVue so need no further explanation.   
+
+What makes HTML from the server usable are `inline-template`and special `is` attributes. They instruct Vue to use contained markup as a template for a component specified as a name of the `is` attribute. In our example it is `pricing`.
+
+Unfortunately `inline-template` feature <Anchor href="https://v3-migration.vuejs.org/breaking-changes/inline-template-attribute.html">was removed</Anchor> from Vue 3.x. It can be replaced by either using template in `<script type="text/html">` with `id` attribute tags or by doing a little trick with scoped slots. In my opinion each one has its own downsides. 
+
+Adding template to `<script type=”text/html”>` allows using server partials in the template but if you load the page you have no HTML displayed because it is embedded in `script` tag. You need to wait until Vue kicks in and renders your markup. You can overcome it by duplicating HTML for the app root which would preserve layout stability until Vue bootstraps the app.
+
+Scoped slots trick does not allow using two-way data binding so you need to implement it yourself which makes template more verbose. I also had a little hard time understanding it at first, maybe because of the way it is described in the docs.
+
+### Stimulus
+Stimulus is part of the <Anchor href="https://hotwired.dev/">Hotwire</Anchor> approach presented by creators of Basecamp. It offers quite different aproach but at its base its scope remains the same: augumenting already existing HTML with interactions. Let's see how the code looks like:
+```html
+<form class="o-container" data-controller="pricing" data-pricing-base-price-value="20">
+  <div class="u-flex u-align-center u-justify-between">
+    <h1 data-pricing-target="price"></h1>
+    <label>
+        Users
+      <input type="number" step="1" min="1" name="users" value="1" data-action="input->pricing#recalculate" data-pricing-target="users">
+    </label>
+  </div>
+  <fieldset>
+    <legend>Periodicity</legend>
+    <label>
+      <input type="radio" name="periodicity" value="8" checked data-action="change->pricing#recalculate" data-pricing-target="periodicity">
+      Monthly
+    </label>
+    <label>  
+      <input type="radio" name="periodicity" value="0" data-action="change->pricing#recalculate" data-pricing-target="periodicity">
+      Annually
+    </label>
+  </fieldset>
+  <fieldset>
+    <legend>Features</legend>
+    <div>
+      <label>
+        <input type="checkbox" value="10" name="feature-1" data-action="change->pricing#recalculate" data-pricing-target="feature">
+        Feature 1
+      </label>
+    </div>
+    <div>
+      <label>
+        <input type="checkbox" value="5" name="feature-2" data-action="change->pricing#recalculate" data-pricing-target="feature">
+        Feature 2
+      </label> 
+    </div>
+  </fieldset>
+</form>
+```
+
+```js
+const { Controller, Application } = Stimulus;
+
+class Pricing extends Controller {
+  static targets = ['price', 'feature', 'periodicity', 'users'];
+  static values = {
+    basePrice: Number,
+    price: Number
+  }
+  
+  priceValueChanged(currPrice) {
+    this.priceTarget.textContent = `$${currPrice}`;
+  }
+  
+  initialize(e) {
+    this.recalculate();
+  }
+  
+  recalculate() {
+    const featuresValue = this.featureTargets.reduce((acc, t) => t.checked ? acc += Number(t.value) : acc, 0);
+    const periodicityValue = Number(this.periodicityTargets.find((t) => t.checked).value);
+    const numberOfUsers = Number(this.usersTarget.value);
+    
+    this.priceValue = (this.basePriceValue + featuresValue + periodicityValue)*numberOfUsers;
+  }
+}
+
+const app = Application.start();
+
+app.register("pricing", Pricing);
+```
+As you can see we extensively use `data` attributes in the markup. They are needed to properly work with controllers - base structures used in Stimulus.
+
+We begin with `data-controller` attribute on the root `<div>` to connect the underlying HTML to the proper controller. Value of `data-controller` attribute is called identifier. In this example we use `pricing` so it implies `Pricing` controller which is defined in the Javascript code.
+
+Now let's take a look at all those `data-*-target` attributes. Values of these attributes are the same as those in the array stored in static `targets` property in the controller class. This allows us to use marked elements in HTML as DOM elements stored in properties in the instance of the controller. We reference them via `this.[name-of-the-target]Target`.
+
+Similiar approach is used for properties storing values. Names of the values we want to use in controller instances are paired with types in the static `values` property of the controller class. This way in the controller instance we can use `this.[name-of-the-value]Value` to operate on the value data. We can also initialize value in HTML rendered on the server using `data-[identifier]-[value-name]-value` attribute. What's more using `[name-of-the-value]ValueChanged` methods on the controller instance we can react to value changes.
+
+`data-action` attributes are used to handle events. We use a special syntax as the value of the attribute - `[event-name]->[controller-name]#[method-name]` to attach events to proper methods on the controllers.
+
+It is clear that "Convention over configuration" approach popular among Rails related projects is also applied here. It makes development much faster and makes codebase much more consistent.
+
+Altough we do not take into account setup with build step it may be worth mentioning that, if you use Webpack as your module bundler you can even leverage <Anchor href="https://github.com/hotwired/stimulus-starter/blob/main/src/index.js#L5">autoloading features</Anchor> so you can even get file based convention for your controllers. In Rails they even took a step further and made Stimulus the "go to" in their starter projects and, backed with import maps, created their own way of creating full-stack apps without build step (<Anchor href="https://world.hey.com/dhh/rails-7-will-have-three-great-answers-to-javascript-in-2021-8d68191b">check blog post</Anchor>), interesting stuff).
+
+Stimulus apply more baked in conventions. To check them out visit <Anchor href="https://stimulus.hotwired.dev/handbook/introduction/s">Stimulus docs</Anchor>.
+
+### Honorable mentions: Knockout and AngularJS
+For the sake of completness I also added two popular (at least some years ago) libraries - Knockout and AngularJS (sometimes referred as Angular 1.x). I don't describe them in detail but I prepared code samples in the repo (Knockout, AngularJS).
+
+They are both quite legacy solutions (support for AngularJS oficially ended in January 2022) but I think that knowing and checking them out is valuable. Maybe not to apply them in a greenfield project but to get a grasp of what shaped solutions we refer to as "modern" these days.
+
+## Personal thoughts
+After some time spent with presented tools I decided to compare them in 3 areas:
+1. Library approach,
+2. Code organization,
+3. Ecosystem,
+
+### Library approach
+For me, presetn solutions fall into two types:
+  1. More declarative, state Javascript memory oriented - Alpine, PetiteVue, Vue
+  2. More imperative, state DOM oriented - Stimulus
+
+Alpine, PetiteVue, Vue keep state of the app in the JS heap memory. We compute our logic in JS, update appropriate data structures and see our result in the view (our view is binded to the data - `v-scope`, `x-data` and object from `data()` factory function). We do not have to worry about syncing the DOM with the data, runtime of those libraries makes that for us according to our view model. This approach probably feels very familiar to those who have already worked with modern frontend frameworks.
+
+Stimulus is definitely more imperative and makes the DOM source of truth. While this way may resemble old days when we kept data in the DOM (using data attributes), it is perfectly fine and works good not only for mentioned Hotwire approach of app development. However we mustn't forget about updating the DOM on changes made in our logic. In our calculator we need to watch for changes made to one of the values and update result in the DOM accordingly. So our controllers will probably have methods like `render`, `show` and we will need to manually invoke them every time we want to update the UI. While this is fine in small sprinkles, when your Stimulus driven part of UI gets complex, it may be hard to always remember about calling these methods.
+
+Altough declarative approach frees developer from bookeeping regarded to syncing your state with DOM it may not be a silver bullet. 
+
+**Initializing the app from the HTML** you from the server may be one of the challenges. If you initialize your state in memory you need sync it manually with the state from the server after your app has inited. Alternativaly you can do some crazy concatenation stuff in the markup if you prefer to handle your logic directly in the HTML (Alpine, PetiteVue). 
+
+In our pricing calculator example, if server rendered HTML would not reflect the initial memory state (e.g. HTML checked features != features in the initial array in the view model), the app would sync the DOM the one from the memory. If you wanted to change the configuration of the pricing in the CMS or conduct server side A/B test with another pricing setup you would find this problematic using memory oriented solutions. The solution to this problem would be to add some initializing logic which would sync the memory state with the state in initial HTML or add state serialized in JSON or other format which would be used as as starting point in the app.
+
+From the point app properly bootstraps on, everything would be handled in memory and the DOM would only be its projection. This does not occur in Stimulus as our state is "serialized in HTML" and all we would need to do is just to do just initialize the app as all calculations are done according to the data in the DOM.
+
+Library approach would probably be one the most important factor if you wanted to choose between compared tools. It is very subjective what you and your team would choose and it may be largely influenced by your previous experiences.
+
+### Code organization
+Alpine and PetiteVue can be used directly in HTML. If your server technology provide template partials solution you can reuse logic via server side template composition. However not everyone likes this approach. What's more to keep things readable you probably would need some kind of extension for your IDE/text editor to highlight syntax in Javascript parts in HTML. If you want to keep your markup and scripts seperate you can use `Alpine.data` in Alpine and components in PetiteVue.
+
+In Stimulus there are controllers which organize and encapsulate your domain logic in a class which adds some niceties (all those `[name]Changed`, `initialize` methods). 
+
+Vue of course has its components but I think that its strengths are much more visible in big apps, not in the context of small interactivity augumentations we do here.
+
+Both Vue and Stimulus are designed in such a way that additional .js file or just `script` block in your HTML is needed.
+
+I think that the most "frameworkey" solution is Stimulus as its conventions and helpers would enforce very consistent and easy to understand codebase if you would have many interactions.
+
+### Ecosystem
+If we compare ecosystems by size, Vue would be obvious leader. Its ecosystem however comes from the "application side" so we should be careful not to pick too heavy solutions for the relatively simple tasks we would have in our interacitivity sprinkles.
+
+Alpine ecosystem has grown quite well. We have community plugins for Alpine, devtools and even <Anchor href="https://alpinejs.dev/components">official UI component library</Anchor>. There is even the newsletter which helps to stay up to date with Alpine news. Alpine is also quite popular among Laravel developers.
+
+Stimulus also has its community, mainly related to the Rails project. There are even projects leveraging Rails and Stimulus to build rich interactive UIs. The notable one is <Anchor href="https://github.com/stimulusreflex/stimulus_reflex">StimulusReflex</Anchor>. If you do not use Rails you can also find <Anchor href="https://www.npmjs.com/search?q=keywords:stimulusjs">helper libraries</Anchor>) adding for example fast to use UI components.
+
+I haven't found any libraries related to PetiteVue. Probably its status of "proof of concept" does not encourage developers to write some additional solutions related to it.
+
+## Personal choice
+My take would be on Alpine or Stimulus.
+
+Reactivity in Alpine makes using it a breeze as syncing state with DOM is no longer a concern. Familiarity with this approach would make developers usually working with modern UI frameworks up to speed very quickly. Altough you can write Alpine inline with your HTML I probably wouldn't use it very often. For me I would leverage it during prototyping phase and then moved code into its own `Alpine.data`.
+
+In Stimulus I like this "convention over configuration" approach which makes developer very productive from the first written line. Structuring code into the same structure -  controller, also seem very convenient. It would definitely speed up onboarding new developers as they wouldn't need to read whole codebase to get a grasp of how to write Javascript in the project.
+
+## Summary
+Simple interactions do not need heavy tools. If you are a freelancer hacking Wordpress sites or Rails apps for your clients, you may find these solutions very helpful in avoiding "Javascript soup". Even if you are application developer and work with frontend frameworks on daily basis, there may be a time when you need to prepare a simple landing page or marketing site. For that occasion these libraries may seem very valuable in your toolbelt.

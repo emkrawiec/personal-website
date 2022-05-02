@@ -1,18 +1,41 @@
+import { graphql, useStaticQuery } from "gatsby";
 import React from "react";
 import { Anchor } from "./Anchor";
 import { Container } from "./Container";
 
-interface FooterProps {}
-
 const Separator = () => <span className="mx-2">|</span>;
 
-export const Footer = (props: FooterProps) => {
+export const Footer = () => {
+  const {
+    site: {
+      siteMetadata: {
+        author: { email },
+        social: { github, linkedin, twitter },
+      },
+    },
+  } = useStaticQuery(graphql`
+    query FooterQuery {
+      site {
+        siteMetadata {
+          author {
+            email
+          }
+          social {
+            github
+            linkedin
+            twitter
+          }
+        }
+      }
+    }
+  `);
+
   return (
-    <footer>
-      <Container className="border-t border-slate-800 py-4 text-center">
-        <div>
+    <footer className="text-center pb-4">
+      <Container>
+        <div className="border-t border-slate-800 pt-4">
           <Anchor
-            href="https://twitter.com/micha_krawiec/"
+            href={twitter}
             target="_blank"
             rel="noopenner"
             className="ml-auto"
@@ -21,12 +44,30 @@ export const Footer = (props: FooterProps) => {
           </Anchor>
           <Separator />
           <Anchor
-            href="https://www.linkedin.com/in/micha%C5%82-krawiec-055397238/"
+            href={linkedin}
             target="_blank"
             rel="noopenner"
             className="ml-auto"
           >
             LinkedIn
+          </Anchor>
+          <Separator />
+          <Anchor
+            href={`mailto:${email}`}
+            target="_blank"
+            rel="noopenner"
+            className="ml-auto"
+          >
+            Email
+          </Anchor>
+          <Separator />
+          <Anchor
+            href={github}
+            target="_blank"
+            rel="noopenner"
+            className="ml-auto"
+          >
+            Github
           </Anchor>
         </div>
         <div>

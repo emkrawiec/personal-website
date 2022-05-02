@@ -1,13 +1,14 @@
 module.exports = {
   siteMetadata: {
-    title: `emcrav | Michał Krawiec personal site`,
+    title: `Michał Krawiec's personal site`,
     author: {
       name: `Michał Krawiec`,
-      email: 'hi@michalkrawiec.com'
+      email: 'hi@michalkrawiec.com',
     },
-    description: `A starter blog demonstrating what Gatsby can do.`,
+    description: ``,
     siteUrl: `https://emcrav.com/`,
     social: {
+      github: `https://github.com/emkrawiec`,
       twitter: `https://twitter.com/micha_krawiec`,
       linkedin: 'https://www.linkedin.com/in/micha%C5%82-krawiec-055397238/'
     },

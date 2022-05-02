@@ -9,6 +9,7 @@ interface BlogPostTemplateProps {
     body: string;
     frontmatter: {
       title: string;
+      description: string;
       date: string;
     };
   };
@@ -17,23 +18,27 @@ interface BlogPostTemplateProps {
 const BlogPostTemplate = ({ data }: PageProps<BlogPostTemplateProps>) => {
   const post = data.mdx;
   const postTitle = post.frontmatter.title;
-  const postDate = post.frontmatter.date;
+  const postMeta = post.frontmatter.description;
+  const publishDate = post.frontmatter.date;
 
   return (
-    <Layout>
-      <section className="mt-10 mb-4">
-        <header className="mb-8 text-center">
-          <h1
-            className="text-4xl font-bold mb-2"
-            dangerouslySetInnerHTML={{ __html: postTitle }}
-          />
-          <p className="text-sm text-slate-400">{postDate}</p>
-        </header>
-        <article className="prose">
-          <MDXRenderer>{post.body}</MDXRenderer>
-        </article>
-      </section>
-    </Layout>
+    <>
+      <Seo title={postTitle} description={postMeta} />
+      <Layout>
+        <section className="mt-10 mb-4">
+          <header className="mb-8 text-center">
+            <h1
+              className="text-4xl font-bold mb-2"
+              dangerouslySetInnerHTML={{ __html: postTitle }}
+            />
+            <p className="text-sm text-slate-400">{publishDate}</p>
+          </header>
+          <article className="prose">
+            <MDXRenderer>{post.body}</MDXRenderer>
+          </article>
+        </section>
+      </Layout>
+    </>
   );
 };
 
@@ -41,17 +46,13 @@ export default BlogPostTemplate;
 
 export const pageQuery = graphql`
   query BlogPostBySlug($id: String!) {
-    site {
-      siteMetadata {
-        title
-      }
-    }
     mdx(id: { eq: $id }) {
       body
       id
       frontmatter {
         date(formatString: "MMMM DD, YYYY")
         title
+        description
       }
     }
   }
