@@ -2,13 +2,20 @@ import * as React from "react";
 import { Link, graphql } from "gatsby";
 
 import Layout from "../components/Layout";
+import Seo from "../components/SEO";
 
 const Blog = ({ data }) => {
-  const posts = data.allMdx.nodes;
+  const {
+    allMdx: { nodes: posts },
+    site: {
+      siteMetadata: { title, description },
+    },
+  } = data;
 
   return (
     <Layout>
-      <h1 className="text-3xl font-bold my-6">Latest blog posts</h1>
+      <Seo title={title} description={description} />
+      <h1 className="text-3xl font-bold mt-10 mb-8">Latest blog posts</h1>
       <ol>
         {posts.map(post => {
           const title = post.frontmatter.title;
@@ -24,7 +31,7 @@ const Blog = ({ data }) => {
                     </small>
                   </header>
                   <section>
-                    <p className="line-clamp-3 text-base">
+                    <p className="line-clamp-6 md:line-clamp-4 text-base">
                       {post.frontmatter.excerpt}
                     </p>
                   </section>
@@ -51,6 +58,12 @@ export const pageQuery = graphql`
           excerpt
         }
         timeToRead
+      }
+    }
+    site {
+      siteMetadata {
+        title
+        description
       }
     }
   }

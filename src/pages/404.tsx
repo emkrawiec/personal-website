@@ -1,33 +1,21 @@
-import * as React from "react";
-import { graphql } from "gatsby";
+import React, { useEffect } from "react";
+import { graphql, navigate } from "gatsby";
 
 import Layout from "../components/Layout";
+import { Anchor } from "../components/Anchor";
 
-interface NotFoundPageProps {
-  data: string;
-  location: string;
-}
-
-const NotFoundPage = (props: NotFoundPageProps) => {
-  const { data, location } = props;
-  const siteTitle = data.site.siteMetadata.title;
-
+const NotFoundPage = () => {
   return (
     <Layout>
-      <h1>404: Not Found</h1>
-      <p>You just hit a route that doesn&#39;t exist... the sadness.</p>
+      <div className="text-center">
+        <h1 className="text-6xl">404</h1>
+        <p className="text-md mt-1">Page not found</p>
+        <p className="text-md mt-4">
+          Go back to <Anchor href="/">home</Anchor>
+        </p>
+      </div>
     </Layout>
   );
 };
 
 export default NotFoundPage;
-
-export const pageQuery = graphql`
-  query {
-    site {
-      siteMetadata {
-        title
-      }
-    }
-  }
-`;

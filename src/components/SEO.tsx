@@ -10,7 +10,7 @@ type SEOProps = Partial<{
 }>;
 
 const Seo = (props: SEOProps) => {
-  const { description, lang, title, meta = [] } = props;
+  const { description, title, lang = "en", meta = [] } = props;
   const { site } = useStaticQuery(
     graphql`
       query {
@@ -28,7 +28,6 @@ const Seo = (props: SEOProps) => {
   );
 
   const metaDescription = description || site.siteMetadata.description;
-  const defaultTitle = site.siteMetadata?.title;
 
   return (
     <Helmet

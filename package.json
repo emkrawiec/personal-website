@@ -2,8 +2,13 @@
   "name": "pesonal-website",
   "private": true,
   "description": "Michał Krawiec's personal website",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "author": "Michał Krawiec <mk.krawiec.m@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/emkrawiec/personal-website"
+  },
   "bugs": {
     "url": "https://github.com/emkrawiec/personal-website"
   },
@@ -13,6 +18,7 @@
     "autoprefixer": "^10.4.6",
     "clsx": "^1.1.1",
     "gatsby": "^4.13.1",
+    "gatsby-plugin-canonical-urls": "^4.13.0",
     "gatsby-plugin-feed": "^4.13.0",
     "gatsby-plugin-force-trailing-slashes": "^1.0.6",
     "gatsby-plugin-image": "^2.13.0",
