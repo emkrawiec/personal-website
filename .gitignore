@@ -58,6 +58,9 @@ typings/
 .cache/
 public
 
+# eslint
+.eslintcache
+
 # Mac files
 .DS_Store
 

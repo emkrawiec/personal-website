@@ -7,3 +7,4 @@ gatsby-node.js
 postcss.config.js
 tailwind.config.js
 .eslintrc.js
+lint-staged.config.js
