@@ -1,16 +1,17 @@
 import * as React from "react";
 import { Link, graphql } from "gatsby";
+import type { PageProps } from "gatsby";
 
 import Layout from "../components/Layout";
 import Seo from "../components/SEO";
 
-const Blog = ({ data }) => {
+const Home = (props: PageProps<FeedPostCollection>) => {
   const {
     allMdx: { nodes: posts },
     site: {
       siteMetadata: { title, description },
     },
-  } = data;
+  } = props.data;
 
   return (
     <Layout>
@@ -45,7 +46,7 @@ const Blog = ({ data }) => {
   );
 };
 
-export default Blog;
+export default Home;
 
 export const pageQuery = graphql`
   query {
