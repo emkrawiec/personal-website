@@ -3,16 +3,16 @@ module.exports = {
   content: [],
   theme: {
     fontFamily: {
-      'sans': ['Public Sans', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-      'monospace': 'IBM Plex Mono, ui-mono, monospace'
+      sans: ["Public Sans", "ui-sans-serif", "system-ui", "sans-serif"],
+      monospace: "IBM Plex Mono, ui-mono, monospace",
     },
     minHeight: ({ theme }) => ({
-      ...theme('spacing'),
-      'screen': 'calc(var(--vh, 1vh) * 100)'
-    })
+      ...theme("spacing"),
+      screen: "calc(var(--vh, 1vh) * 100)",
+    }),
   },
   plugins: [
-    require('@tailwindcss/typography'),
-    require('@tailwindcss/line-clamp')
+    require("@tailwindcss/typography"),
+    require("@tailwindcss/line-clamp"),
   ],
-}
+};

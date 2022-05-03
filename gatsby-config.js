@@ -4,22 +4,22 @@ module.exports = {
     description: `Adventures through tech. Learn about my findings and thoughts in Web technologies and related topis.`,
     author: {
       name: `Michał Krawiec`,
-      email: 'hi@michalkrawiec.com',
+      email: "hi@michalkrawiec.com",
     },
     siteUrl: `https://michalkrawiec.com/`,
     social: {
       github: `https://github.com/emkrawiec`,
       twitter: `https://twitter.com/micha_krawiec`,
-      linkedin: 'https://www.linkedin.com/in/micha%C5%82-krawiec-055397238/'
+      linkedin: "https://www.linkedin.com/in/micha%C5%82-krawiec-055397238/",
     },
   },
-  trailingSlash: 'always',
+  trailingSlash: "always",
   plugins: [
     `gatsby-plugin-postcss`,
     `gatsby-plugin-image`,
     {
       resolve: `gatsby-source-filesystem`,
-      options: { 
+      options: {
         path: `${__dirname}/content/blog`,
         name: `blog`,
       },
@@ -43,7 +43,7 @@ module.exports = {
     },
     `gatsby-transformer-sharp`,
     `gatsby-plugin-sharp`,
-    'gatsby-plugin-sitemap',
+    "gatsby-plugin-sitemap",
     `gatsby-plugin-react-helmet`,
     {
       resolve: `gatsby-plugin-canonical-urls`,
@@ -53,4 +53,4 @@ module.exports = {
       },
     },
   ],
-}
+};

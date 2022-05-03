@@ -1,5 +1,4 @@
-import React, { useEffect } from "react";
-import { graphql, navigate } from "gatsby";
+import React from "react";
 
 import Layout from "../components/Layout";
 import { Anchor } from "../components/Anchor";

@@ -3,9 +3,7 @@ import React from "react";
 import { Container } from "./Container";
 import { Logo } from "./Logo";
 
-interface HeaderProps {}
-
-export const Header = (props: HeaderProps) => {
+export const Header = () => {
   return (
     <header className="py-4">
       <Container>
